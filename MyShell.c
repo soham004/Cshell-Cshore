@@ -5,47 +5,126 @@
 #include <linux/limits.h>
 #include <sys/wait.h>
 #include <ctype.h>
+#include <signal.h>
+#include <termios.h>
+
 
 int DEBUG = 0;
 
+#define HISTORY_SIZE 20
+char *history[HISTORY_SIZE];
+int history_count = 0;
+int history_pos = 0;
+
+void sigint_handler(int signo) {
+    char cwd[PATH_MAX];
+
+    printf("\n");  // Move to a new line
+    if (getcwd(cwd, sizeof(cwd)) != NULL) {
+        printf("%s> ", cwd);
+    }  // Print new prompt
+    fflush(stdout); // Ensure prompt is displayed immediately
+}
+
+void enableRawMode() {
+    struct termios raw;
+    tcgetattr(STDIN_FILENO, &raw);  // Get current terminal attributes
+    raw.c_lflag &= ~(ICANON | ECHO); // Disable canonical mode and echo
+    tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw); // Apply changes
+}
+void disableRawMode() {
+    struct termios raw;
+    tcgetattr(STDIN_FILENO, &raw);
+    raw.c_lflag |= (ICANON | ECHO); // Restore original settings
+    tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
+}
 
 #define buffer_size 1024
+char *shell_read_line(void) {
+    enableRawMode();
 
-char *shell_read_line(void){
-    int bufferSize = buffer_size;
-    int pos=0;
-    char *buffer = malloc(sizeof(char)*bufferSize);
+    int bufferSize = buffer_size, pos = 0;
+    char *buffer = malloc(bufferSize);
+    char cwd[PATH_MAX];
     int c;
-    if(!buffer){
-        fprintf(stderr, "lsh: allocation error\n");
-        exit(EXIT_FAILURE); 
+
+    if (!buffer) {
+        fprintf(stderr, "shell: allocation error\n");
+        exit(EXIT_FAILURE);
     }
-    
-    while (1)
-    {
+
+    while (1) {
         c = getchar();
 
-        if(c == EOF || c == '\n'){
-            buffer[pos]='\0';
-            return buffer;
-        }
-        else{
-            buffer[pos] = c;
-        }
-        pos++;
-
-        if(pos>=bufferSize){
-            bufferSize += buffer_size;
-            buffer = realloc(buffer, bufferSize);
-            if(!buffer){
-                fprintf(stderr, "lsh: allocation error\n");
-                exit(EXIT_FAILURE); 
+        if (c == 27) { // Escape sequence for arrow keys
+            getchar(); // Skip '['
+            switch (getchar()) {
+                case 'A': // Up Arrow
+                    if (history_count > 0) {
+                        history_pos = (history_pos - 1 + history_count) % history_count;
+                        if (getcwd(cwd, sizeof(cwd)) != NULL) {
+                            printf("\r\033[K%s> ", cwd);// Clear line
+                        }
+                        printf("%s", history[history_pos]); 
+                        strcpy(buffer, history[history_pos]);
+                        pos = strlen(buffer);
+                    }
+                    continue;
+                case 'B': // Down Arrow
+                    if (history_count > 0) {
+                        history_pos = (history_pos + 1) % history_count;
+                        if (getcwd(cwd, sizeof(cwd)) != NULL) {
+                            printf("\r\033[K%s> ", cwd);
+                        }
+                        printf("%s", history[history_pos]); // Print next history entry
+                        strcpy(buffer, history[history_pos]);
+                        pos = strlen(buffer);
+                    }
+                    continue;
             }
         }
 
-    }
-    
+        if (c == '\n'|| c==EOF) {
+            printf("\n");
+            buffer[pos] = '\0';
+            break;
+        } 
+        else if (c == 127) { // Handle Backspace
+            if (pos > 0) {
+                printf("\b \b"); // Erase character
+                pos--;
+            }
+        } 
+        else {
+            buffer[pos++] = c;
+            printf("%c", c); // Echo character
+        }
 
+        if (pos >= bufferSize) {
+            bufferSize += buffer_size;
+            buffer = realloc(buffer, bufferSize);
+            if (!buffer) {
+                fprintf(stderr, "shell: allocation error\n");
+                exit(EXIT_FAILURE);
+            }
+        }
+    }
+
+    disableRawMode();
+    return buffer;
+}
+
+void add_to_history(char *command) {
+    if (history_count < HISTORY_SIZE) {
+        history[history_count++] = strdup(command);
+    } else {
+        free(history[0]); // Remove the oldest command
+        for (int i = 1; i < HISTORY_SIZE; i++) {
+            history[i - 1] = history[i];
+        }
+        history[HISTORY_SIZE - 1] = strdup(command);
+    }
+    history_pos = history_count;
 }
 
 
@@ -139,7 +218,6 @@ char **shell_split(char *line){
     
 }
 
-
 int shell_launch(char **args)
 {
   pid_t pid, wpid;
@@ -147,20 +225,23 @@ int shell_launch(char **args)
 
   pid = fork();
   if (pid == 0) {
+    printf(DEBUG ? "Launched Child Process\n" : "");
+    signal(SIGINT, SIG_DFL);
     // Child process
     if (execvp(args[0], args) == -1) {
-      perror("lsh");
+        perror("Error Executing");
     }
     exit(EXIT_FAILURE);
   } 
   else if (pid < 0) {
     // Error forking
-    perror("lsh");
+    perror("Error Forking");
   } 
   else {
     // Parent process
     do {
-      wpid = waitpid(pid, &status, WUNTRACED);
+        printf(DEBUG ? "Main Process: Waiting for child process\n" : "");
+        wpid = waitpid(pid, &status, WUNTRACED);
     } while (!WIFEXITED(status) && !WIFSIGNALED(status));
   }
 
@@ -190,12 +271,12 @@ int shell_num_builtins() {
 int shell_cd(char **args)
 {
   if (args[1] == NULL) {
-    fprintf(stderr, "lsh: expected argument to \"cd\"\n");
+    fprintf(stderr, "Expected argument to \"cd\"\n");
   } 
   else {
     printf(DEBUG ? "Changing dir to: %s \n" : "", args[1]);
     if (chdir(args[1]) != 0) {
-      perror("lsh");
+      perror("Couldn't change directory");
     }
   }
   return 1;
@@ -217,7 +298,8 @@ int shell_help(char **args)
 
 int shell_exit(char **args)
 {
-  return 0;
+    printf(DEBUG ? "Received exit command\n" : "");
+    return 0;
 }
 
 int shell_execute(char **args)
@@ -247,12 +329,13 @@ void shell_loop(){
     do{
         
         if (getcwd(cwd, sizeof(cwd)) != NULL) {
-            printf("%s", cwd);
+            printf("%s> ", cwd);
         }
-        printf("> ");
         line = shell_read_line();
+        add_to_history(line);
         printf(DEBUG?"Line: %s \n":"", line);
         args = shell_split(line);
+
         status = shell_execute(args);
         free(line);
         free(args);
@@ -268,6 +351,7 @@ int main(int argc, char const *argv[])
             DEBUG = 1; // Enable debug mode
         }
     }
+    signal(SIGINT, sigint_handler);
     shell_loop();
     
     return EXIT_SUCCESS;
