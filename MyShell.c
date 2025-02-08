@@ -10,7 +10,7 @@ int DEBUG = 0;
 
 #define buffer_size 1024
 
-char *simple_shell_read_line(void){
+char *shell_read_line(void){
     int bufferSize = buffer_size;
     int pos=0;
     char *buffer = malloc(sizeof(char)*bufferSize);
@@ -51,8 +51,9 @@ char *simple_shell_read_line(void){
 #define token_buf_size 64
 #define token_delim " \t\n\r\a"
 
-char **simple_shell_split(char *line){
-    //this doesn't treat "4 5 6" as a simngle token instead "4, 5 and 6" are three different tokens
+char **shell_split(char *line){
+    // this doesn't treat "4 5 6" as a simngle token instead "4, 5 and 6" are three different tokens
+    /*
     int buf_size = token_buf_size, position = 0;
     char **tokens = malloc(sizeof(char*)*buf_size);
     char *token;
@@ -74,11 +75,69 @@ char **simple_shell_split(char *line){
     }
     tokens[position] = NULL;
     return tokens;
+    */
+    int buf_size = token_buf_size, position = 0;
+    char **tokens = malloc(sizeof(char*) * buf_size);
+    char *ptr = line, *token_start;
+    int in_quotes = 0;
 
+    if (!tokens) {
+        fprintf(stderr, "shell: token allocation error\n");
+        exit(EXIT_FAILURE);
+    }
+
+    printf(DEBUG ? "Args:\n" : "");
+
+    while (*ptr) {
+        // Skip leading delimiters
+        while (*ptr && strchr(token_delim, *ptr)) ptr++;
+
+        if (*ptr == '\0') break; // End of input
+
+        // Check if token starts with a quote
+        if (*ptr == '"') {
+            in_quotes = 1;
+            token_start = ++ptr; // Move past opening quote
+            while (*ptr && (*ptr != '"' || (*(ptr - 1) == '\\'))) {
+                ptr++; // Move inside the quotes
+            }
+            *ptr = '\0'; // Null terminate the token at the closing quote
+            ptr++; // Move past the closing quote
+        } else {
+            // Regular token (space-separated)
+            token_start = ptr;
+            while (*ptr && !strchr(token_delim, *ptr)) {
+                ptr++;
+            }
+            if (*ptr) {
+                *ptr = '\0'; // Null terminate the token
+                ptr++;
+            }
+        }
+
+        // Store the token
+        tokens[position] = strdup(token_start);
+        position++;
+
+        // Resize token array if needed
+        if (position >= buf_size) {
+            buf_size += token_buf_size;
+            tokens = realloc(tokens, sizeof(char*) * buf_size);
+            if (!tokens) {
+                fprintf(stderr, "shell: token allocation error\n");
+                exit(EXIT_FAILURE);
+            }
+        }
+
+        printf(DEBUG ? "%s\n" : "", token_start);
+    }
+
+    tokens[position] = NULL; // Null terminate the token array
+    return tokens;
     
 }
 
-void simple_shell_loop(){
+void shell_loop(){
 
     char *line;
     char **args;
@@ -90,10 +149,12 @@ void simple_shell_loop(){
             printf("%s", cwd);
         }
         printf("> ");
-        line = simple_shell_read_line();
+        line = shell_read_line();
         printf(DEBUG?"Line: %s \n":"", line);
-        args = simple_shell_split(line);
+        args = shell_split(line);
+        
         free(line);
+        free(args);
     }while(status);
     
 
@@ -108,7 +169,7 @@ int main(int argc, char const *argv[])
             DEBUG = 1; // Enable debug mode
         }
     }
-    simple_shell_loop();
+    shell_loop();
     
     return EXIT_SUCCESS;
 }
