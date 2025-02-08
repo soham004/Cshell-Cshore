@@ -34,9 +34,8 @@ The shell will display the current working directory followed by `>` as a prompt
 
 
 ## Roadmap
-- Add support for executing system commands via `shell_exec`.
 - Implement history
-- Support built-in commands like `cd`, `exit`, etc.
+- Add persistent history
 
 ## License
 This project is licensed under the [Unlicense](https://unlicense.org).
