@@ -17,6 +17,8 @@ A simple Unix shell written in C. **CShell-CShore** is a lightweight command-lin
 
 - Debug mode for verbose output (`--debug` flag).
 
+- Has command history accesible by using arrow up or down keys.
+
   
 
 ## Installation
@@ -72,7 +74,7 @@ The shell will display the current working directory followed by `>` as a prompt
 
 -  :heavy_check_mark: Add support for executing system commands via `shell_execute`. 
 -  :heavy_check_mark: Support built-in commands like `cd`, `exit`, etc.
--  :heavy_check_mark:Implement history
+-  :heavy_check_mark: Implement history
 - Implement persistent history
   
 
