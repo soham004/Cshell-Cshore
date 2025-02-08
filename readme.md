@@ -70,10 +70,10 @@ The shell will display the current working directory followed by `>` as a prompt
 
 ## Roadmap
 
--  :heavy_check_mark:Add support for executing system commands via `shell_execute`. 
+-  :heavy_check_mark: Add support for executing system commands via `shell_execute`. 
 -  :heavy_check_mark: Support built-in commands like `cd`, `exit`, etc.
 - Implement history
-
+- Implement persistent history
   
 
 ## License
