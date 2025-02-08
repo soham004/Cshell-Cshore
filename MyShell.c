@@ -258,6 +258,7 @@ char *builtin_str[] = {
     "help",
     "exit"
 };
+
 int (*builtin_func[]) (char **) = {
     &shell_cd,
     &shell_help,
