@@ -104,7 +104,8 @@ char **shell_split(char *line) {
             }
             *ptr = '\0'; // Null terminate the token at the closing quote
             ptr++; // Move past the closing quote
-        } else {
+        } 
+        else {
             // Regular token (space-separated)
             token_start = ptr;
             while (*ptr && !strchr(token_delim, *ptr)) {

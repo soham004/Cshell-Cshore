@@ -19,6 +19,8 @@ A simple Unix shell written in C. **CShell-CShore** is a lightweight command-lin
 
 - Has command history accesible by using arrow up or down keys.
 
+- Persistent command history saved to `~/.cshell_history`.
+
   
 
 ## Installation
@@ -75,7 +77,7 @@ The shell will display the current working directory followed by `>` as a prompt
 -  :heavy_check_mark: Add support for executing system commands via `shell_execute`. 
 -  :heavy_check_mark: Support built-in commands like `cd`, `exit`, etc.
 -  :heavy_check_mark: Implement history.
-- Implement persistent history.
+-  :heavy_check_mark: Implement persistent history.
 - Add support for auto completion for file names on `Tab`.
 - Add coloured output for better readibility.
 

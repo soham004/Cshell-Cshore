@@ -32,7 +32,7 @@ int main(int argc, char const *argv[]) {
         }
     }
     signal(SIGINT, sigint_handler);
+    load_history();
     shell_loop();
-    
     return EXIT_SUCCESS;
 }
