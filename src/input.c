@@ -9,6 +9,7 @@ char *shell_read_line(void) {
     char *buffer = malloc(bufferSize);
     char cwd[PATH_MAX];
     int c;
+    int cursor_pos = 0;
 
     if (!buffer) {
         fprintf(stderr, "shell: allocation error\n");
@@ -30,6 +31,7 @@ char *shell_read_line(void) {
                         printf("%s", history[history_pos]); 
                         strcpy(buffer, history[history_pos]);
                         pos = strlen(buffer);
+                        cursor_pos = pos;
                     }
                     continue;
                 case 'B': // Down Arrow
@@ -41,6 +43,19 @@ char *shell_read_line(void) {
                         printf("%s", history[history_pos]); // Print next history entry
                         strcpy(buffer, history[history_pos]);
                         pos = strlen(buffer);
+                        cursor_pos = pos;
+                    }
+                    continue;
+                case 'C': // Right Arrow
+                    if (cursor_pos < pos) {
+                        printf("\033[C"); // Move cursor right
+                        cursor_pos++;
+                    }
+                    continue;
+                case 'D': // Left Arrow
+                    if (cursor_pos > 0) {
+                        printf("\033[D"); // Move cursor left
+                        cursor_pos--;
                     }
                     continue;
             }
@@ -52,14 +67,32 @@ char *shell_read_line(void) {
             break;
         } 
         else if (c == 127) { // Handle Backspace
-            if (pos > 0) {
+            if (pos > 0 && cursor_pos > 0) {
                 printf("\b \b"); // Erase character
+                memmove(&buffer[cursor_pos - 1], &buffer[cursor_pos], pos - cursor_pos);
                 pos--;
+                cursor_pos--;
+                buffer[pos] = '\0';
+                if (getcwd(cwd, sizeof(cwd)) != NULL) {
+                    printf("\r\033[K%s> %s", cwd, buffer); // Clear line and print buffer
+                } // Clear line and print buffer
+                for (int i = pos; i > cursor_pos; i--) {
+                    printf("\033[D"); // Move cursor back to the correct position
+                }
             }
         } 
         else {
-            buffer[pos++] = c;
-            printf("%c", c); // Echo character
+            memmove(&buffer[cursor_pos + 1], &buffer[cursor_pos], pos - cursor_pos);
+            buffer[cursor_pos] = c;
+            pos++;
+            cursor_pos++;
+            buffer[pos] = '\0';
+            if (getcwd(cwd, sizeof(cwd)) != NULL) {
+                printf("\r\033[K%s> %s", cwd, buffer); // Clear line and print buffer
+            }
+            for (int i = pos; i > cursor_pos; i--) {
+                printf("\033[D"); // Move cursor back to the correct position
+            }
         }
 
         if (pos >= bufferSize) {

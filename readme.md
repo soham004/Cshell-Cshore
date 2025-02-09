@@ -81,10 +81,6 @@ The shell will display the current working directory followed by `>` as a prompt
 - Add support for auto completion for file names on `Tab`.
 - Add coloured output for better readibility.
 
-## Known Bugs
-
-- Unexpected prompt behabiour when pressing left or right arrow keys
-
 
 ## License
 
