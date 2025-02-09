@@ -37,7 +37,7 @@ cd CShell-CShore
 
 ```sh
 
-gcc -o cshell cshell.c
+make
 
 ```
 
