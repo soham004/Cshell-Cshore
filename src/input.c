@@ -1,6 +1,18 @@
 #include "../include/input.h"
 #include "../include/history.h"
 #include "../include/utils.h"
+#include <dirent.h>
+#include <errno.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <fcntl.h>
+#include <ctype.h>
+#include <termios.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <linux/limits.h>
 
 char *shell_read_line(void) {
     enableRawMode();
@@ -81,6 +93,19 @@ char *shell_read_line(void) {
                 }
             }
         } 
+        else if (c == '\t') { // Handle Tab for auto-completion
+            buffer[pos] = '\0';
+            char *completion = autocomplete(buffer);
+            if (completion) {
+                strcpy(buffer, completion);
+                pos = strlen(buffer);
+                cursor_pos = pos;
+                if (getcwd(cwd, sizeof(cwd)) != NULL) {
+                    printf("\r\033[K%s> %s", cwd, buffer); // Clear line and print buffer
+                }
+                free(completion);
+            }
+        }
         else {
             memmove(&buffer[cursor_pos + 1], &buffer[cursor_pos], pos - cursor_pos);
             buffer[cursor_pos] = c;
