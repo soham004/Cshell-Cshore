@@ -94,15 +94,42 @@ char *shell_read_line(void) {
             }
         } 
         else if (c == '\t') { // Handle Tab for auto-completion
-            buffer[pos] = '\0';
-            char *completion = autocomplete(buffer);
+            //buffer[pos] = '\0';
+            char *last_token = strrchr(buffer, ' ');
+            char *prefix = last_token ? last_token + 1 : buffer;
+            char *completion = autocomplete(prefix);
+
             if (completion) {
-                strcpy(buffer, completion);
+                // Replace the last token with the completion
+                size_t new_len = (last_token ? (last_token - buffer + 1) : 0) + strlen(completion) + 1;
+                char *new_buffer = malloc(new_len);
+                if (!new_buffer) {
+                    perror("malloc");
+                    free(completion);
+                    continue;
+                }
+
+                // Copy the buffer up to the last token
+                if (last_token) {
+                    strncpy(new_buffer, buffer, last_token - buffer + 1);
+                    new_buffer[last_token - buffer + 1] = '\0';
+                } else {
+                    new_buffer[0] = '\0';
+                }
+
+                // Append the completion
+                strcat(new_buffer, completion);
+
+                // Update buffer, pos, and cursor_pos
+                strcpy(buffer, new_buffer);
                 pos = strlen(buffer);
                 cursor_pos = pos;
+
                 if (getcwd(cwd, sizeof(cwd)) != NULL) {
                     printf("\r\033[K%s> %s", cwd, buffer); // Clear line and print buffer
                 }
+
+                free(new_buffer);
                 free(completion);
             }
         }

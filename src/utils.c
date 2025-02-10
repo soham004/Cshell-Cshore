@@ -50,10 +50,12 @@ int shell_launch(char **args) {
             perror("Error Executing");
         }
         exit(EXIT_FAILURE);
-    } else if (pid < 0) {
+    } 
+    else if (pid < 0) {
         // Error forking
         perror("Error Forking");
-    } else {
+    } 
+    else {
         // Parent process
         do {
             printf(DEBUG ? "Main Process: Waiting for child process\n" : "");
@@ -63,6 +65,7 @@ int shell_launch(char **args) {
 
     return 1;
 }
+
 char *autocomplete(const char *prefix) {
     char *completion = NULL;
     size_t len = strlen(prefix);
@@ -94,6 +97,6 @@ char *autocomplete(const char *prefix) {
     }
 
     closedir(dir);
-    
+
     return completion;
 }
