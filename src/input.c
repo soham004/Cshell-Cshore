@@ -1,6 +1,18 @@
 #include "../include/input.h"
 #include "../include/history.h"
 #include "../include/utils.h"
+#include <dirent.h>
+#include <errno.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <fcntl.h>
+#include <ctype.h>
+#include <termios.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <linux/limits.h>
 
 char *shell_read_line(void) {
     enableRawMode();
@@ -81,6 +93,46 @@ char *shell_read_line(void) {
                 }
             }
         } 
+        else if (c == '\t') { // Handle Tab for auto-completion
+            //buffer[pos] = '\0';
+            char *last_token = strrchr(buffer, ' ');
+            char *prefix = last_token ? last_token + 1 : buffer;
+            char *completion = autocomplete(prefix);
+
+            if (completion) {
+                // Replace the last token with the completion
+                size_t new_len = (last_token ? (last_token - buffer + 1) : 0) + strlen(completion) + 1;
+                char *new_buffer = malloc(new_len);
+                if (!new_buffer) {
+                    perror("malloc");
+                    free(completion);
+                    continue;
+                }
+
+                // Copy the buffer up to the last token
+                if (last_token) {
+                    strncpy(new_buffer, buffer, last_token - buffer + 1);
+                    new_buffer[last_token - buffer + 1] = '\0';
+                } else {
+                    new_buffer[0] = '\0';
+                }
+
+                // Append the completion
+                strcat(new_buffer, completion);
+
+                // Update buffer, pos, and cursor_pos
+                strcpy(buffer, new_buffer);
+                pos = strlen(buffer);
+                cursor_pos = pos;
+
+                if (getcwd(cwd, sizeof(cwd)) != NULL) {
+                    printf("\r\033[K%s> %s", cwd, buffer); // Clear line and print buffer
+                }
+
+                free(new_buffer);
+                free(completion);
+            }
+        }
         else {
             memmove(&buffer[cursor_pos + 1], &buffer[cursor_pos], pos - cursor_pos);
             buffer[cursor_pos] = c;
