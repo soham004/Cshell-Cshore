@@ -94,10 +94,6 @@ char *autocomplete(const char *prefix) {
     }
 
     closedir(dir);
-
-    if (completion) {
-        printf("\n");
-    }
-
+    
     return completion;
 }
