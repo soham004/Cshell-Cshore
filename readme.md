@@ -1,76 +1,47 @@
-
 # 🐚 CShell-CShore
 
-  
-
 A simple Unix shell written in C. **CShell-CShore** is a lightweight command-line shell that reads user input, tokenizes commands, and executes basic shell operations.
-
-  
 
 ## Features
 
 - Reads and parses user input commands.
-
 - Supports quoted arguments (e.g., `"ls -la"` is treated as a single argument).
-
 - Implements a simple command-line interface with a working directory prompt.
-
 - Debug mode for verbose output (`--debug` flag).
-
-- Has command history accesible by using arrow up or down keys.
-
+- Has command history accessible by using arrow up or down keys.
 - Persistent command history saved to `~/.cshell_history`.
-
-  
+- Auto-completion for file names on `Tab`, only the last argument is sent for auto-completion and then concatenated with the main buffer.
 
 ## Installation
 
 1. Clone the repository:
 
 ```sh
-
 git clone https://github.com/soham004/Cshell-Cshore.git
-
 cd CShell-CShore
-
 ```
 
 2. Compile the shell:
 
 ```sh
-
 make
-
 ```
-
-  
 
 ## Usage
 
 Run the shell:
 
 ```sh
-
 ./cshell
-
 ```
-
-  
 
 Run in debug mode:
 
 ```sh
-
-./cshell  --debug
-
+./cshell --debug
 ```
 
-  
-
 The shell will display the current working directory followed by `>` as a prompt, allowing you to enter commands.
-
-  
-  
 
 ## Roadmap
 
@@ -79,8 +50,7 @@ The shell will display the current working directory followed by `>` as a prompt
 -  :heavy_check_mark: Implement history.
 -  :heavy_check_mark: Implement persistent history.
 -  :heavy_check_mark: Add support for auto completion for file names on `Tab`.
-- Add coloured output for better readibility.
-
+- Add coloured output for better readability.
 
 ## License
 
